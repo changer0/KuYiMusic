@@ -206,7 +206,6 @@ public class NetMusicListFragment extends Fragment implements AdapterView.OnItem
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-
             //让listView隐藏
 //            listView_net_music.setVisibility(View.GONE);
             //清空

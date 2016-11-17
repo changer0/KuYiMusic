@@ -300,13 +300,9 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
      */
     private void lrcDisplay(final Mp3Info mp3Info){
 
-
-
         //歌词显示
         final String songName = mp3Info.getTitle();
-
         System.out.println("songName:" + songName);
-
         String lrcPath = Environment.getExternalStorageDirectory() + Constant.DIR_LRC + "/" + songName + ".lrc";
         File lrcFile = new File(lrcPath);
         //如果本地不存在就去网络上搜索
@@ -314,25 +310,19 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
             //下载
             SearchMusicUtils.getsInstance().setListener(new SearchMusicUtils.OnSearchResultLister() {
                 @Override
-                public void onSearchResult(ArrayList<SearchResult> results) {
-
-
+                public synchronized void onSearchResult(ArrayList<SearchResult> results) {
                         //这个地方耽误了我好久!!!!!!!!!!!!!艹艹
-                        if(results != null){
-                            Log.d(TAG, "onSearchResult: " + results.get(0));
+                        if(results != null && results.size() > 0){
+//                            Log.d(TAG, "onSearchResult: " + results.get(0));
                             //搜索出来之后
                             SearchResult searchResult = results.get(0);
+//                            Log.d(TAG, "onSearchResult: searchResult" + searchResult.toString());
                             String url = Constant.BAIDU_URL + searchResult.getUrl();
-
-
                             //Handler目的是在下载完了之后可以通知我们
                             DownloadUtils.getsInstance().downloadLRC(url, songName, myHandler);
                         }else{
                             myHandler.sendEmptyMessage(DownloadUtils.FAIED_LRC);
                         }
-
-
-
                 }
             }).search(songName + " " + mp3Info.getArtist(), 1);
         } else {

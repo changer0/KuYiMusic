@@ -298,24 +298,20 @@ public class PlayService extends Service implements MediaPlayer.OnCompletionList
      */
     public interface MusicUpdateListener {
         //进度值得更新
-        public void onPublish(int progress);
-
+        void onPublish(int progress);
         //切换歌曲位置的方法
-        public void onChange(int position);
+        void onChange(int position);
     }
 
     public void setMusicUpdateListener(MusicUpdateListener musicUpdateListener) {
         this.musicUpdateListener = musicUpdateListener;
     }
-
-
     //播放出错之后
     @Override
     public boolean onError(MediaPlayer mp, int what, int extra) {
         mp.reset();
         return false;
     }
-
     //用于随机播放用
     private Random random = new Random();
 

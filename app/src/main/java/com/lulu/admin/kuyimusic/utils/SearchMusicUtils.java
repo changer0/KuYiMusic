@@ -3,6 +3,7 @@ package com.lulu.admin.kuyimusic.utils;
 import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.lulu.admin.kuyimusic.vo.SearchResult;
 
@@ -21,15 +22,12 @@ import java.util.concurrent.Executors;
  * Created by Admin on 2016/5/25.
  */
 public class SearchMusicUtils {
+    private static final String TAG = "SearchMusicUtils";
     private static final int SIZE = 20;//只查询前SIZE条记录
     private static final String URL = Constant.BAIDU_URL + Constant.BAIDU_SEARCH;
-
     private static SearchMusicUtils sInstance;//当前实例
-
     private OnSearchResultLister mListener;//
-
     private ExecutorService mThreadTool;//创建一个线程池, 用来创建线程, 该线程用来完成获取搜索的信息的功能,不能阻塞主线程!
-
 
     //此处是同步方法!!
     public synchronized static SearchMusicUtils getsInstance() {
@@ -126,7 +124,7 @@ public class SearchMusicUtils {
             Document doc = Jsoup.
                     connect(URL).data("key", key, "start", start, "size", String.valueOf(SIZE)).
                     userAgent(Constant.USER_AGENT).timeout(6 * 1000).get();
-//            System.out.println(doc);
+            Log.d(TAG, "getMusicList: " + doc.toString());
             /*
                 <div class="song-item">
 
@@ -147,37 +145,35 @@ public class SearchMusicUtils {
 
             //从每个div标签中查找
             for (int i = 0; i < songTitles.size(); i++) {
-
                 //在div中查找a标签的集合
                 songInfoAs = songTitles.get(i).getElementsByTag("a");
                 SearchResult searchResult = new SearchResult();
-                for (int j = 0; j < songInfoAs.size(); j++) {
-
-
-                    //此info是指每个a标签中的info
-                    songInfoA = songInfoAs.get(j);
-
-                    //startsWith:Compares the specified string to this string to determine if the specified string is a prefix(前缀).
-                    //startsWith:比较两个字符串, 检查是否该字符串是其前缀
-                    //找出歌名和链接
-                    if (songInfoA.attr("href").startsWith("/song")) {
-                        searchResult.setMusicName(songInfoA.text());
-                        searchResult.setUrl(songInfoA.attr("href"));
+                if (songInfoAs != null) {
+                    for (int j = 0; j < songInfoAs.size(); j++) {
+                        //此info是指每个a标签中的info
+                        songInfoA = songInfoAs.get(j);
+                        //startsWith:Compares the specified string to this string to determine if the specified string is a prefix(前缀).
+                        //startsWith:比较两个字符串, 检查是否该字符串是其前缀
+                        //找出歌名和链接
+                        if (songInfoA.attr("href").startsWith("/song")) {
+                            searchResult.setMusicName(songInfoA.text());
+                            searchResult.setUrl(songInfoA.attr("href"));
+                        }
+                        if (songInfoA.attr("href").startsWith("/album")) {
+                            searchResult.setAlbum(songInfoA.text());
+                        }
+                        if (songInfoA.attr("href").startsWith("/data")) {
+                            searchResult.setArtist(songInfoA.text());
+                        }
                     }
-                    if (songInfoA.attr("href").startsWith("/album")) {
-                        searchResult.setAlbum(songInfoA.text());
+                    //非空判断, 如果音乐名字或者链接没有就视为没有此音乐
+                    if (TextUtils.isEmpty(searchResult.getMusicName()) || TextUtils.isEmpty(searchResult.getUrl())) {
+                        break;
                     }
-                    if (songInfoA.attr("href").startsWith("/data")) {
-                        searchResult.setArtist(songInfoA.text());
-                    }
+                    searchResults.add(searchResult);
                 }
-                //非空判断, 如果音乐名字或者链接没有就视为没有此音乐
-                if(TextUtils.isEmpty(searchResult.getMusicName()) || TextUtils.isEmpty(searchResult.getUrl())){
-                    break;
-                }
-
-                searchResults.add(searchResult);
             }
+
             return searchResults;
 
         } catch (IOException e) {
@@ -198,7 +194,7 @@ public class SearchMusicUtils {
 
     //监听回调机制
     public interface OnSearchResultLister {
-        public void onSearchResult(ArrayList<SearchResult> results);
+        void onSearchResult(ArrayList<SearchResult> results);
     }
 
 }
