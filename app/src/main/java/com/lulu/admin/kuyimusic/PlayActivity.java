@@ -49,6 +49,7 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
     private static final int UPDATE_LRC = 0x1000;
     private static final int DELAY = 0x35;
     private static final int DELAY_MILLI = 2000;
+    private static final int UPDATE_LRC_VIEW = 0x3000;
     private TextView textView_title, textView_end_time, textView_start_time;
     private ImageView imageView_album, imageView_play_mode,
     imageView_prev, imageView_play_pause, imageView_next, imageView_favorite;
@@ -172,13 +173,12 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
                 Toast t = new Toast(playActivity);
                 t.setView(toastView);
                 t.setDuration(Toast.LENGTH_SHORT);
-
+                ILrcBuilder lrcBuilder = new DefaultLrcBuilder();
 //                myHandler.sendEmptyMessageDelayed(DELAY, 2000);
                 switch (msg.what) {
                     case UPDATE_TIME:
                         playActivity.textView_start_time.setText(MediaUtils.formatTime(msg.arg1));
                         break;
-
                     case UPDATE_LRC:
                         //更新歌词
                         if (msg.obj != null) {
@@ -186,35 +186,47 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
                         }
                         break;
                     case DownloadUtils.SUCCESS_LRC:
-
                         textView.setText("歌词下载成功o((≧▽≦o)！！");
                         t.show();
-
                         playActivity.loadLRC(new File((String) msg.obj));
                         break;
                     case DownloadUtils.FAIED_LRC:
-
                         textView.setText("歌词下载失败(>﹏<。)～……");
                         t.show();
-                        ILrcBuilder builder = new DefaultLrcBuilder();
-                        List<LrcRow> rows = builder.getLrcRows("歌词下载失败! ");
+                        List<LrcRow> rows = lrcBuilder.getLrcRows("歌词下载失败! ");
                         playActivity.lrcView.setLrc(rows);
+                        clickPrevNextEnable();
                         break;
                     case DELAY:
-                        synchronized (this) {
-                            //歌词显示之后，让上一曲下一曲可以点击
-                            if (!playActivity.imageView_next.isClickable()) {
-                                playActivity.imageView_next.setClickable(true);
-                            }
-                            if (!playActivity.imageView_prev.isClickable()) {
-                                playActivity.imageView_prev.setClickable(true);
-                            }
-                        }
+                        //歌词显示之后，让上一曲下一曲可以点击
+                        clickPrevNextEnable();
+                        break;
 
+                    case UPDATE_LRC_VIEW:
+                        Object obj = msg.obj;
+                        if (obj instanceof StringBuffer) {
+                            StringBuffer buffer = (StringBuffer) obj;
+                            if (buffer != null) {
+                                playActivity.lrcView.setLrc(lrcBuilder.getLrcRows(buffer.toString()));
+                            } else {
+                                playActivity.lrcView.setLrc( lrcBuilder.getLrcRows("歌词下载失败! "));
+                            }
+                            clickPrevNextEnable();
+                        }
 
                         break;
                 }
 
+            }
+        }
+
+        private void clickPrevNextEnable() {
+            //歌词显示之后，让上一曲下一曲可以点击
+            if (!playActivity.imageView_next.isClickable()) {
+                playActivity.imageView_next.setClickable(true);
+            }
+            if (!playActivity.imageView_prev.isClickable()) {
+                playActivity.imageView_prev.setClickable(true);
             }
         }
     }
@@ -309,7 +321,7 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
      *
      * @param mp3Info
      */
-    private synchronized void lrcDisplay(final Mp3Info mp3Info) {
+    private  void lrcDisplay(final Mp3Info mp3Info) {
 
         //歌词显示
         final String songName = mp3Info.getTitle();
@@ -321,7 +333,7 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
             //下载
             SearchMusicUtils.getsInstance().setListener(new SearchMusicUtils.OnSearchResultLister() {
                 @Override
-                public synchronized void onSearchResult(ArrayList<SearchResult> results) {
+                public void onSearchResult(ArrayList<SearchResult> results) {
                     //这个地方耽误了我好久!!!!!!!!!!!!!艹艹
                     if (results != null && results.size() > 0) {
 //                            Log.d(TAG, "onSearchResult: " + results.get(0));
@@ -335,12 +347,12 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
                         myHandler.sendEmptyMessage(DownloadUtils.FAIED_LRC);
                     }
 
-                    myHandler.sendEmptyMessageDelayed(DELAY, DELAY_MILLI);
+//                    myHandler.sendEmptyMessageDelayed(DELAY, DELAY_MILLI);
                 }
             }).search(songName + " " + mp3Info.getArtist(), 1);
         } else {
             //歌词显示之后，让上一曲下一曲可以点击
-            myHandler.sendEmptyMessageDelayed(DELAY, DELAY_MILLI);
+//            myHandler.sendEmptyMessageDelayed(DELAY, DELAY_MILLI);
             loadLRC(lrcFile);
         }
     }
@@ -417,7 +429,6 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
             }
             //收藏功能的点击事件
             case R.id.imageView_favorite: {
-
                 //得到当前的mp3信息
                 Mp3Info mp3Info = playService.getMp3Infos().get(playService.getCurrentPosition());
                 //需要使用数据库的内容了
@@ -535,30 +546,39 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
 
 
     //加载歌词
-    private void loadLRC(File lrcFile) {
-        StringBuffer buffer = new StringBuffer(1024 * 10);
-        char[] chars = new char[1024];
+    private void loadLRC(final File lrcFile) {
+        new  Thread(){
+            @Override
+            public void run() {
+                synchronized (PlayActivity.this){
+                    StringBuffer buffer = new StringBuffer(1024 * 10);
+                    char[] chars = new char[1024];
 
-        try {
-            BufferedReader in = new BufferedReader(
-                    new InputStreamReader(
-                            new FileInputStream(lrcFile)));
-            int len = -1;
-            while ((len = in.read(chars)) != -1) {
-                buffer.append(chars, 0, len);
+                    try {
+                        BufferedReader in = new BufferedReader(
+                                new InputStreamReader(
+                                        new FileInputStream(lrcFile)));
+                        int len = -1;
+                        while ((len = in.read(chars)) != -1) {
+                            buffer.append(chars, 0, len);
+                        }
+                        in.close();
+
+
+                    } catch (Exception e) {
+                        myHandler.obtainMessage(UPDATE_LRC_VIEW, null).sendToTarget();
+                        e.printStackTrace();
+                    }
+                    myHandler.obtainMessage(UPDATE_LRC_VIEW, buffer).sendToTarget();
+
+                }
+
             }
-            in.close();
+        }.start();
 
 
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
-        ILrcBuilder builder = new DefaultLrcBuilder();
-        List<LrcRow> rows = builder.getLrcRows(buffer.toString());
-        lrcView.setLrc(rows);
+
 
     }
 

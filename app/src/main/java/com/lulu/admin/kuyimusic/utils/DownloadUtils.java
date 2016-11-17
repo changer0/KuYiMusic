@@ -137,10 +137,13 @@ public class DownloadUtils {
                         }
 
 
+                    } else {
+                        handler.obtainMessage(FAIED_LRC).sendToTarget();
                     }
 
 
                 } catch (Exception e) {
+                    handler.obtainMessage(FAIED_LRC).sendToTarget();
                     e.printStackTrace();
                 }
 
