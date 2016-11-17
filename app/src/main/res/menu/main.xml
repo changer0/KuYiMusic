@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    >
+
+    <item
+        android:id="@+id/action_contact"
+        android:orderInCategory="1"
+        android:showAsAction="ifRoom"
+        android:title="@string/my_like_music" />
+    <item
+        android:id="@+id/resent_play_list"
+        android:orderInCategory="2"
+        android:showAsAction="ifRoom"
+        android:title="@string/resent_play_list" />
+    <item
+        android:id="@+id/setting"
+        android:orderInCategory="3"
+        android:showAsAction="ifRoom"
+
+        android:title="@string/setting" />
+
+</menu>

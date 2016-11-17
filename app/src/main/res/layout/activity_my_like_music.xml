@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+
+    tools:context="com.lulu.admin.kuyimusic.MyLikeMusicActivity">
+
+    <LinearLayout
+        android:background="#000000"
+        android:gravity="center"
+        android:id="@+id/linearLayout1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:textColor="#FFFFFF"
+            android:id="@+id/textView_like"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:text="这里是我们收藏的歌曲, 单击播放, 长按取消收藏"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+
+    <ListView
+        android:id="@+id/listView_like"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/linearLayout1"
+        android:layout_centerHorizontal="true" />
+</RelativeLayout>
