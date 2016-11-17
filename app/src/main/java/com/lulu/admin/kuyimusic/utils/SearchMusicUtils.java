@@ -10,7 +10,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,7 +26,7 @@ public class SearchMusicUtils {
 
     private static SearchMusicUtils sInstance;//当前实例
 
-    private OnsearchResultLister mListener;//
+    private OnSearchResultLister mListener;//
 
     private ExecutorService mThreadTool;//创建一个线程池, 用来创建线程, 该线程用来完成获取搜索的信息的功能,不能阻塞主线程!
 
@@ -53,7 +52,7 @@ public class SearchMusicUtils {
      * @param listener
      * @return
      */
-    public SearchMusicUtils setListener(OnsearchResultLister listener) {
+    public SearchMusicUtils setListener(OnSearchResultLister listener) {
         mListener = listener;
         return this;
     }
@@ -198,7 +197,7 @@ public class SearchMusicUtils {
     }
 
     //监听回调机制
-    public interface OnsearchResultLister {
+    public interface OnSearchResultLister {
         public void onSearchResult(ArrayList<SearchResult> results);
     }
 

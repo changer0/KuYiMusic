@@ -176,7 +176,7 @@ public class NetMusicListFragment extends Fragment implements AdapterView.OnItem
         //进行搜索, 这是个痛苦的过程, 此处还是应用了 >>观察者设计模式<<
         //因为网络搜索也是一个异步的任务, 所以我们并不清楚什么时候搜索结束, 所以需要我们设计一个监听和回调机制
         //也就是说, 当获取完网络数据后回调我们的方法完成UI等的更新操作
-        SearchMusicUtils.getsInstance().setListener(new SearchMusicUtils.OnsearchResultLister() {
+        SearchMusicUtils.getsInstance().setListener(new SearchMusicUtils.OnSearchResultLister() {
             @Override
             public void onSearchResult(ArrayList<SearchResult> results) {
                 //当网络搜索完毕后会回调该方法, 并将results数据传送回来
@@ -209,8 +209,6 @@ public class NetMusicListFragment extends Fragment implements AdapterView.OnItem
 
             //让listView隐藏
 //            listView_net_music.setVisibility(View.GONE);
-
-
             //清空
             searchResults.clear();
         }

@@ -1,19 +1,16 @@
 package com.lulu.admin.kuyimusic;
 
-import android.app.Activity;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.provider.ContactsContract;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -33,23 +30,21 @@ import com.lulu.admin.kuyimusic.utils.SearchMusicUtils;
 import com.lulu.admin.kuyimusic.vo.Mp3Info;
 import com.lulu.admin.kuyimusic.vo.SearchResult;
 
-import org.jsoup.nodes.Document;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.zip.Inflater;
 
 /**
  * 播放主界面, 通过点击"我的音乐"界面中的右下角图片跳转
  */
 public class PlayActivity extends BaseActivity implements View.OnClickListener, SeekBar.OnSeekBarChangeListener {
+
+    private static final String TAG = "PlayActivity";
 
     private static final int UPDATE_LRC = 0x1000;
     private TextView textView_title, textView_end_time, textView_start_time;
@@ -317,14 +312,14 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
         //如果本地不存在就去网络上搜索
         if (!lrcFile.exists()) {
             //下载
-            SearchMusicUtils.getsInstance().setListener(new SearchMusicUtils.OnsearchResultLister() {
+            SearchMusicUtils.getsInstance().setListener(new SearchMusicUtils.OnSearchResultLister() {
                 @Override
                 public void onSearchResult(ArrayList<SearchResult> results) {
 
 
                         //这个地方耽误了我好久!!!!!!!!!!!!!艹艹
-                        System.out.println("results"+results);
                         if(results != null){
+                            Log.d(TAG, "onSearchResult: " + results.get(0));
                             //搜索出来之后
                             SearchResult searchResult = results.get(0);
                             String url = Constant.BAIDU_URL + searchResult.getUrl();
