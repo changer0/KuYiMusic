@@ -47,23 +47,25 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
     private static final String TAG = "PlayActivity";
 
     private static final int UPDATE_LRC = 0x1000;
+    private static final int DELAY = 0x35;
+    private static final int DELAY_MILLI = 2000;
     private TextView textView_title, textView_end_time, textView_start_time;
     private ImageView imageView_album, imageView_play_mode,
-            imageView_prev, imageView_play_pause, imageView_next, imageView_favorite;
-    private SeekBar seekBar;
+    imageView_prev, imageView_play_pause, imageView_next, imageView_favorite;
 
+    private SeekBar seekBar;
     //    private ArrayList<Mp3Info> mp3Infos;
     private int position;
     //更新播放时间的标记
     private static final int UPDATE_TIME = 0x1;
+
     //接收由"我的音乐"界面传过来, isPause
     private boolean isPause = false;
-
     private ViewPager viewPager;
     private ArrayList<View> views = new ArrayList<>();
+
     //将全局应用对象设置为字段
     private MyPlayerAPP app;
-
     //歌词显示页面
     private LrcView lrcView;
 
@@ -126,7 +128,7 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
         });
         lrcView.setLoadingTipText("正在加载歌词");
         lrcView.setBackgroundResource(R.mipmap.img_back_lrc);
-       
+
         views.add(lrc_layout);
         viewPager.setAdapter(new MyPagerAdapter());
 
@@ -171,7 +173,7 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
                 t.setView(toastView);
                 t.setDuration(Toast.LENGTH_SHORT);
 
-
+//                myHandler.sendEmptyMessageDelayed(DELAY, 2000);
                 switch (msg.what) {
                     case UPDATE_TIME:
                         playActivity.textView_start_time.setText(MediaUtils.formatTime(msg.arg1));
@@ -180,8 +182,6 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
                     case UPDATE_LRC:
                         //更新歌词
                         if (msg.obj != null) {
-
-
                             playActivity.lrcView.seekLrcToTime(Long.parseLong(msg.obj.toString()));
                         }
                         break;
@@ -199,10 +199,22 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
                         ILrcBuilder builder = new DefaultLrcBuilder();
                         List<LrcRow> rows = builder.getLrcRows("歌词下载失败! ");
                         playActivity.lrcView.setLrc(rows);
+                        break;
+                    case DELAY:
+                        synchronized (this) {
+                            //歌词显示之后，让上一曲下一曲可以点击
+                            if (!playActivity.imageView_next.isClickable()) {
+                                playActivity.imageView_next.setClickable(true);
+                            }
+                            if (!playActivity.imageView_prev.isClickable()) {
+                                playActivity.imageView_prev.setClickable(true);
+                            }
+                        }
 
 
                         break;
                 }
+
             }
         }
     }
@@ -218,7 +230,6 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
         myHandler.sendMessage(msg);
         //进度条的更新
         seekBar.setProgress(progress);
-
         //通过Handler处理歌词进度更新
         myHandler.obtainMessage(UPDATE_LRC, progress).sendToTarget();
 
@@ -242,10 +253,8 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
                 imageView_play_pause.setImageResource(R.mipmap.play);
             }
 
-
             seekBar.setProgress(0);
             seekBar.setMax((int) mp3Info.getDuration());
-
             //更新播放模式
             switch (playService.getPlay_mode()) {
                 case PlayService.ORDER_PLAY:
@@ -290,15 +299,17 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
             //将歌词显示
             lrcDisplay(mp3Info);
 
+
         }
     }
 
 
     /**
      * 负责歌词的显示
+     *
      * @param mp3Info
      */
-    private void lrcDisplay(final Mp3Info mp3Info){
+    private synchronized void lrcDisplay(final Mp3Info mp3Info) {
 
         //歌词显示
         final String songName = mp3Info.getTitle();
@@ -311,21 +322,25 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
             SearchMusicUtils.getsInstance().setListener(new SearchMusicUtils.OnSearchResultLister() {
                 @Override
                 public synchronized void onSearchResult(ArrayList<SearchResult> results) {
-                        //这个地方耽误了我好久!!!!!!!!!!!!!艹艹
-                        if(results != null && results.size() > 0){
+                    //这个地方耽误了我好久!!!!!!!!!!!!!艹艹
+                    if (results != null && results.size() > 0) {
 //                            Log.d(TAG, "onSearchResult: " + results.get(0));
-                            //搜索出来之后
-                            SearchResult searchResult = results.get(0);
+                        //搜索出来之后
+                        SearchResult searchResult = results.get(0);
 //                            Log.d(TAG, "onSearchResult: searchResult" + searchResult.toString());
-                            String url = Constant.BAIDU_URL + searchResult.getUrl();
-                            //Handler目的是在下载完了之后可以通知我们
-                            DownloadUtils.getsInstance().downloadLRC(url, songName, myHandler);
-                        }else{
-                            myHandler.sendEmptyMessage(DownloadUtils.FAIED_LRC);
-                        }
+                        String url = Constant.BAIDU_URL + searchResult.getUrl();
+                        //Handler目的是在下载完了之后可以通知我们
+                        DownloadUtils.getsInstance().downloadLRC(url, songName, myHandler);
+                    } else {
+                        myHandler.sendEmptyMessage(DownloadUtils.FAIED_LRC);
+                    }
+
+                    myHandler.sendEmptyMessageDelayed(DELAY, DELAY_MILLI);
                 }
             }).search(songName + " " + mp3Info.getArtist(), 1);
         } else {
+            //歌词显示之后，让上一曲下一曲可以点击
+            myHandler.sendEmptyMessageDelayed(DELAY, DELAY_MILLI);
             loadLRC(lrcFile);
         }
     }
@@ -352,10 +367,15 @@ public class PlayActivity extends BaseActivity implements View.OnClickListener, 
             }
 
             case R.id.imageView_next: {
+                //点击过后不让其点击
+                imageView_next.setClickable(false);
+                imageView_prev.setClickable(false);
                 playService.next();
                 break;
             }
             case R.id.imageView_prev: {
+                imageView_next.setClickable(false);
+                imageView_prev.setClickable(false);
                 playService.prev();
                 break;
             }

@@ -106,7 +106,9 @@ public class MainActivity extends BaseActivity {
     public void change(int position) {
         if (pager.getCurrentItem() == 0) {
             //这是回调"我的音乐"中的changerUIStatusOnPlay方法更改UI界面
-            myMusicListFragment.changerUIStatusOnPlay(position);
+            if (myMusicListFragment != null) {
+                myMusicListFragment.changerUIStatusOnPlay(position);
+            }
         } else if (pager.getCurrentItem() == 1) {
 
         }
